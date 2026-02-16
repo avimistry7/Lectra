@@ -15,7 +15,9 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ data }) => {
 
   useEffect(() => {
     const svgElement = svgRef.current;
-    if (!svgElement || !data.entities.length) return;
+    if (!svgElement || !data.entities.length) {
+      return;
+    }
 
     const width = 800;
     const height = 600;
@@ -129,11 +131,10 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ data }) => {
       event.subject.fy = null;
     }
 
-    // Return an explicit destructor function that returns void.
-    const destructor = (): void => {
+    // Explicitly typed cleanup function to satisfy React's EffectCallback
+    return (): void => {
       simulation.stop();
     };
-    return destructor;
   }, [data]);
 
   return (
