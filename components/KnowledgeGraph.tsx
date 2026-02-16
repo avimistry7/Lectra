@@ -20,7 +20,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ data }) => {
     const height = 600;
 
     const svg = d3.select(svgRef.current)
-      .attr('viewBox', [0, 0, width, height] as any)
+      .attr('viewBox', `0 0 ${width} ${height}`)
       .style('width', '100%')
       .style('height', 'auto');
 
@@ -62,7 +62,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ data }) => {
       .attr('font-size', '10px')
       .attr('fill', '#64748b')
       .attr('text-anchor', 'middle')
-      .text(d => d.relation);
+      .text((d: any) => d.relation);
 
     // Node groups
     const node = g.append('g')
@@ -128,9 +128,10 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ data }) => {
       event.subject.fy = null;
     }
 
-    // Explicitly return void from the cleanup function to satisfy TypeScript's EffectCallback definition.
+    // Explicitly return a function that returns nothing (void)
     return () => {
       simulation.stop();
+      return undefined;
     };
   }, [data]);
 
