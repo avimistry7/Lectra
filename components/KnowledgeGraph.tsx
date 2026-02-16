@@ -14,12 +14,13 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ data }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    if (!svgRef.current || !data.entities.length) return;
+    const svgElement = svgRef.current;
+    if (!svgElement || !data.entities.length) return;
 
     const width = 800;
     const height = 600;
 
-    const svg = d3.select(svgRef.current)
+    const svg = d3.select(svgElement)
       .attr('viewBox', `0 0 ${width} ${height}`)
       .style('width', '100%')
       .style('height', 'auto');
@@ -99,14 +100,14 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ data }) => {
 
     simulation.on('tick', () => {
       link
-        .attr('x1', (d: any) => d.source.x)
-        .attr('y1', (d: any) => d.source.y)
-        .attr('x2', (d: any) => d.target.x)
-        .attr('y2', (d: any) => d.target.y);
+        .attr('x1', (d: any) => (d.source as any).x)
+        .attr('y1', (d: any) => (d.source as any).y)
+        .attr('x2', (d: any) => (d.target as any).x)
+        .attr('y2', (d: any) => (d.target as any).y);
 
       linkLabels
-        .attr('x', (d: any) => (d.source.x + d.target.x) / 2)
-        .attr('y', (d: any) => (d.source.y + d.target.y) / 2);
+        .attr('x', (d: any) => ((d.source as any).x + (d.target as any).x) / 2)
+        .attr('y', (d: any) => ((d.source as any).y + (d.target as any).y) / 2);
 
       node.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
     });
@@ -128,22 +129,30 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ data }) => {
       event.subject.fy = null;
     }
 
-    // Explicitly return a function that returns nothing (void)
-    return () => {
+    // Return an explicit destructor function that returns void.
+    const destructor = (): void => {
       simulation.stop();
-      return undefined;
     };
+    return destructor;
   }, [data]);
 
   return (
     <div className="w-full h-[600px] border border-slate-200 rounded-xl overflow-hidden bg-white shadow-inner relative">
       <svg ref={svgRef} className="cursor-move w-full h-full" />
       <div className="absolute top-4 right-4 bg-white/90 p-3 rounded-lg border border-slate-200 text-xs space-y-2 shadow-sm pointer-events-none">
-        <div className="font-bold mb-1">Legend</div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#818cf8]"></div> Concept</div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#fb7185]"></div> Person</div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#34d399]"></div> Theory</div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#fbbf24]"></div> Method</div>
+        <div className="font-bold mb-1 text-slate-900">Legend</div>
+        <div className="flex items-center gap-2 text-slate-600 font-medium">
+          <div className="w-3 h-3 rounded-full bg-[#818cf8]"></div> Concept
+        </div>
+        <div className="flex items-center gap-2 text-slate-600 font-medium">
+          <div className="w-3 h-3 rounded-full bg-[#fb7185]"></div> Person
+        </div>
+        <div className="flex items-center gap-2 text-slate-600 font-medium">
+          <div className="w-3 h-3 rounded-full bg-[#34d399]"></div> Theory
+        </div>
+        <div className="flex items-center gap-2 text-slate-600 font-medium">
+          <div className="w-3 h-3 rounded-full bg-[#fbbf24]"></div> Method
+        </div>
       </div>
     </div>
   );
