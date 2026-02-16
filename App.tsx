@@ -4,7 +4,8 @@ import {
   extractTopics, 
   generateQuiz, 
   extractKnowledgeGraph,
-  generateGeneralSummary
+  generateGeneralSummary,
+  generateFlashcards
 } from './services/geminiService';
 import { extractTextFromFile } from './services/fileService';
 import { 
@@ -12,16 +13,19 @@ import {
   QuizQuestion, 
   AppState, 
   KnowledgeGraphResponse,
-  SummaryResponse
+  SummaryResponse,
+  Flashcard
 } from './types';
 import KnowledgeGraph from './components/KnowledgeGraph';
 import QuizView from './components/QuizView';
+import FlashcardsView from './components/FlashcardsView';
 
 const App: React.FC = () => {
   const [lectureText, setLectureText] = useState('');
   const [appState, setAppState] = useState<AppState>('IDLE');
   const [topics, setTopics] = useState<Topic[]>([]);
   const [currentQuiz, setCurrentQuiz] = useState<QuizQuestion[]>([]);
+  const [currentFlashcards, setCurrentFlashcards] = useState<Flashcard[]>([]);
   const [kgData, setKgData] = useState<KnowledgeGraphResponse | null>(null);
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
@@ -36,17 +40,14 @@ const App: React.FC = () => {
     setAppState('ANALYZING');
     
     try {
-      // Step 1: Summary (Sequential)
       setLoadingMsg('Distilling Core Intelligence...');
       const summaryResp = await generateGeneralSummary(text);
       setSummaryData(summaryResp);
 
-      // Step 2: Knowledge Graph (Sequential)
       setLoadingMsg('Mapping Semantic Relationships...');
       const kgResp = await extractKnowledgeGraph(text);
       setKgData(kgResp);
 
-      // Step 3: Topics (Sequential)
       setLoadingMsg('Deconstructing Lecture Architecture...');
       const topicResp = await extractTopics(text);
       setTopics(topicResp.topics);
@@ -56,7 +57,7 @@ const App: React.FC = () => {
       console.error(err);
       const isQuota = err.message?.includes("429") || err.message?.includes("RESOURCE_EXHAUSTED");
       alert(isQuota 
-        ? 'API Quota Exceeded. Please wait a minute and try again. Switch to a paid key for higher limits.' 
+        ? 'API Quota Exceeded. Please wait a minute and try again.' 
         : 'Analysis failed. Please try again with different content.');
       setAppState('IDLE');
     }
@@ -99,6 +100,20 @@ const App: React.FC = () => {
       const resp = await generateQuiz(topic);
       setCurrentQuiz(resp.quiz);
       setAppState('QUIZ_VIEW');
+    } catch (err) {
+      console.error(err);
+      setAppState('TOPICS_VIEW');
+    }
+  };
+
+  const handleStartFlashcards = async (topic: Topic) => {
+    setAppState('ANALYZING');
+    setLoadingMsg(`Crafting Flashcards for "${topic.title}"...`);
+    setSelectedTopic(topic);
+    try {
+      const resp = await generateFlashcards(topic);
+      setCurrentFlashcards(resp.flashcards);
+      setAppState('FLASHCARDS_VIEW');
     } catch (err) {
       console.error(err);
       setAppState('TOPICS_VIEW');
@@ -242,7 +257,7 @@ const App: React.FC = () => {
               <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
             <h2 className="text-3xl font-black text-slate-900 mb-2">{loadingMsg}</h2>
-            <p className="text-slate-500 animate-pulse">Running Optimized Pipeline (sequential processing)...</p>
+            <p className="text-slate-500 animate-pulse">Running Optimized Pipeline...</p>
           </div>
         )}
 
@@ -308,11 +323,6 @@ const App: React.FC = () => {
                 <h2 className="text-4xl font-black text-slate-900 mb-2">Lecture Insights</h2>
                 <p className="text-slate-500 font-medium">Extracted {topics.length} core topics from your material.</p>
               </div>
-              <div className="flex gap-2">
-                <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-bold border border-indigo-100">
-                  <i className="fas fa-chart-line mr-2"></i> Importance Scores Enabled
-                </span>
-              </div>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -328,9 +338,6 @@ const App: React.FC = () => {
                       }`}>
                         Difficulty: {topic.difficulty_level}/5
                       </span>
-                      <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest">
-                        Weight: {topic.importance_score}
-                      </span>
                     </div>
                   </div>
                   
@@ -341,29 +348,22 @@ const App: React.FC = () => {
                     {topic.summary}
                   </p>
 
-                  <div className="space-y-4 mb-8">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Subtopics & Concepts</h4>
-                    {topic.subtopics.map((sub, idx) => (
-                      <div key={idx} className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                        <p className="text-sm font-bold text-slate-800 mb-2">{sub.title}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {sub.key_concepts.map((concept, cIdx) => (
-                            <span key={cIdx} className="text-[10px] bg-white border border-slate-200 text-slate-600 px-2 py-1 rounded-md">
-                              {concept}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                    <button 
+                      onClick={() => handleStartQuiz(topic)}
+                      className="flex-grow py-3 bg-slate-900 hover:bg-indigo-600 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      <i className="fas fa-vial"></i>
+                      Quiz
+                    </button>
+                    <button 
+                      onClick={() => handleStartFlashcards(topic)}
+                      className="flex-grow py-3 bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2"
+                    >
+                      <i className="fas fa-clone"></i>
+                      Flashcards
+                    </button>
                   </div>
-
-                  <button 
-                    onClick={() => handleStartQuiz(topic)}
-                    className="w-full py-4 bg-slate-900 hover:bg-indigo-600 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-3 shadow-lg"
-                  >
-                    <i className="fas fa-play-circle"></i>
-                    Start Assessment
-                  </button>
                 </div>
               ))}
             </div>
@@ -387,6 +387,14 @@ const App: React.FC = () => {
             questions={currentQuiz} 
             topic={selectedTopic} 
             onRetake={(newQ) => setCurrentQuiz(newQ)}
+            onFinish={() => setAppState('TOPICS_VIEW')}
+          />
+        )}
+
+        {appState === 'FLASHCARDS_VIEW' && selectedTopic && (
+          <FlashcardsView 
+            flashcards={currentFlashcards} 
+            topic={selectedTopic} 
             onFinish={() => setAppState('TOPICS_VIEW')}
           />
         )}

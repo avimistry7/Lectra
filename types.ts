@@ -4,6 +4,12 @@ export interface Subtopic {
   key_concepts: string[];
 }
 
+export interface Flashcard {
+  id: string;
+  front: string;
+  back: string;
+}
+
 export interface Topic {
   topic_id: string;
   title: string;
@@ -11,6 +17,7 @@ export interface Topic {
   difficulty_level: number;
   importance_score: number;
   subtopics: Subtopic[];
+  flashcards?: Flashcard[];
 }
 
 export interface TopicExtractionResponse {
@@ -28,6 +35,10 @@ export interface QuizQuestion {
 
 export interface QuizResponse {
   quiz: QuizQuestion[];
+}
+
+export interface FlashcardsResponse {
+  flashcards: Flashcard[];
 }
 
 export interface Entity {
@@ -53,4 +64,4 @@ export interface SummaryResponse {
   detailed_summary: string;
 }
 
-export type AppState = 'IDLE' | 'ANALYZING' | 'TOPICS_VIEW' | 'QUIZ_VIEW' | 'KG_VIEW' | 'SUMMARY_VIEW';
+export type AppState = 'IDLE' | 'ANALYZING' | 'TOPICS_VIEW' | 'QUIZ_VIEW' | 'KG_VIEW' | 'SUMMARY_VIEW' | 'FLASHCARDS_VIEW';

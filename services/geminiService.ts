@@ -5,14 +5,12 @@ import {
   QuizResponse, 
   KnowledgeGraphResponse, 
   Topic,
-  SummaryResponse
+  SummaryResponse,
+  FlashcardsResponse
 } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
-/**
- * Helper to handle exponential backoff for 429 errors
- */
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
   let lastError: any;
   for (let i = 0; i < maxRetries; i++) {
@@ -31,6 +29,47 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
   }
   throw lastError;
 }
+
+export const generateFlashcards = async (topic: Topic): Promise<FlashcardsResponse> => {
+  return withRetry(async () => {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Generate 8-10 high-quality academic flashcards for the topic: "${topic.title}".
+      
+Rules:
+- Front should be a key concept, term, or question.
+- Back should be a concise definition, explanation, or answer.
+- Ensure cards cover different subtopics.
+- Difficulty should be university level.
+
+Topic Summary: ${topic.summary}
+Subtopics: ${topic.subtopics.map(s => s.title).join(', ')}`,
+      config: {
+        systemInstruction: "You are an expert educator. Generate structured study flashcards in JSON format.",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            flashcards: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  front: { type: Type.STRING },
+                  back: { type: Type.STRING }
+                },
+                required: ["id", "front", "back"]
+              }
+            }
+          },
+          required: ["flashcards"]
+        }
+      }
+    });
+    return JSON.parse(response.text || '{"flashcards": []}');
+  });
+};
 
 export const extractTopics = async (lectureText: string): Promise<TopicExtractionResponse> => {
   return withRetry(async () => {
