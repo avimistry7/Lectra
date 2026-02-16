@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Academic Genius: AI Lecture Assistant",
+  "description": "An advanced academic content analysis engine that extracts topics, generates adaptive quizzes, and visualizes knowledge graphs from university-level lecture materials.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
