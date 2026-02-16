@@ -78,7 +78,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ data }) => {
     // Node circles
     node.append('circle')
       .attr('r', 20)
-      .attr('fill', d => {
+      .attr('fill', (d: any) => {
         switch (d.type) {
           case 'concept': return '#818cf8';
           case 'person': return '#fb7185';
@@ -95,7 +95,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ data }) => {
       .attr('font-size', '12px')
       .attr('font-weight', '600')
       .attr('fill', '#1e293b')
-      .text(d => d.name);
+      .text((d: any) => d.name);
 
     simulation.on('tick', () => {
       link
@@ -128,12 +128,15 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({ data }) => {
       event.subject.fy = null;
     }
 
-    return () => simulation.stop();
+    // Explicitly return void from the cleanup function to satisfy TypeScript's EffectCallback definition.
+    return () => {
+      simulation.stop();
+    };
   }, [data]);
 
   return (
     <div className="w-full h-[600px] border border-slate-200 rounded-xl overflow-hidden bg-white shadow-inner relative">
-      <svg ref={svgRef} className="cursor-move" />
+      <svg ref={svgRef} className="cursor-move w-full h-full" />
       <div className="absolute top-4 right-4 bg-white/90 p-3 rounded-lg border border-slate-200 text-xs space-y-2 shadow-sm pointer-events-none">
         <div className="font-bold mb-1">Legend</div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-[#818cf8]"></div> Concept</div>
